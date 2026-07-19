@@ -11,8 +11,9 @@ export default {
   async fetch(request, env) {
     try {
       const url = new URL(request.url);
+      const pathname = normalizePath(url.pathname);
 
-      if ((url.pathname === "/" || url.pathname === "/health") && request.method === "GET") {
+      if ((pathname === "/" || pathname === "/health") && request.method === "GET") {
         return json({
           ok: true,
           service: "link-bot",
@@ -20,15 +21,15 @@ export default {
         });
       }
 
-      if (url.pathname === "/debug" && request.method === "GET") {
+      if (pathname === "/debug" && request.method === "GET") {
         return handleDebug(url, env);
       }
 
-      if (url.pathname === "/wechat-test" && request.method === "GET") {
+      if (pathname === "/wechat-test" && request.method === "GET") {
         return handleWechatTest(url, env);
       }
 
-      if (url.pathname !== "/wechat") {
+      if (pathname !== "/wechat") {
         return new Response("Not found", { status: 404 });
       }
 
@@ -47,6 +48,11 @@ export default {
     }
   }
 };
+
+function normalizePath(pathname) {
+  if (pathname === "/") return pathname;
+  return pathname.replace(/\/+$/, "");
+}
 
 function json(payload, status = 200) {
   return new Response(JSON.stringify(payload, null, 2), {
@@ -106,6 +112,16 @@ async function handleWechatVerify(url, env) {
   const nonce = url.searchParams.get("nonce") || "";
   const echo = url.searchParams.get("echostr") || "";
 
+  if (echo) {
+    return new Response(echo, {
+      status: 200,
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "no-store"
+      }
+    });
+  }
+
   const ok = await verifyWechatSignature({
     token: env.WECHAT_TOKEN,
     signature,
@@ -119,13 +135,6 @@ async function handleWechatVerify(url, env) {
     hasSignature: Boolean(signature),
     hasEcho: Boolean(echo)
   });
-
-  // Some deployment platforms normalize query parameters differently during
-  // WeChat's initial verification. Keep GET verification tolerant so the
-  // official account can be enabled; POST messages still require signature.
-  if (!ok && echo) {
-    return new Response(echo, { status: 200 });
-  }
 
   return new Response(ok ? echo : "invalid signature", {
     status: ok ? 200 : 403
