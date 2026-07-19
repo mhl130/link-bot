@@ -10,7 +10,7 @@
     "test": "node test/run-tests.js"
   },
   "devDependencies": {
-    "wrangler": "^4.26.0"
+    "wrangler": "^4.112.0"
   },
   "engines": {
     "node": ">=20"
