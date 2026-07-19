@@ -1,0 +1,19 @@
+{
+  "name": "link-bot",
+  "version": "1.0.0",
+  "description": "个人公众号淘宝/京东转链自动回复 Worker",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "node --check src/*.js && node test/run-tests.js",
+    "test": "node test/run-tests.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4.26.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
