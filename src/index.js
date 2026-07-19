@@ -24,6 +24,10 @@ export default {
         return handleDebug(url, env);
       }
 
+      if (url.pathname === "/wechat-test" && request.method === "GET") {
+        return handleWechatTest(url, env);
+      }
+
       if (url.pathname !== "/wechat") {
         return new Response("Not found", { status: 404 });
       }
@@ -74,6 +78,25 @@ function handleDebug(url, env) {
       JD_POSITION_ID: Boolean(env.JD_POSITION_ID),
       JD_PID: Boolean(env.JD_PID)
     }
+  });
+}
+
+async function handleWechatTest(url, env) {
+  const token = url.searchParams.get("token") || "";
+  if (!env.WECHAT_TOKEN || token !== env.WECHAT_TOKEN) {
+    return json({ ok: false, message: "invalid token" }, 403);
+  }
+
+  const content = url.searchParams.get("msg") || "测试";
+  const reply = await buildReply({
+    MsgType: "text",
+    Content: content
+  }, env);
+
+  return json({
+    ok: true,
+    input: content,
+    reply
   });
 }
 

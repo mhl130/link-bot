@@ -95,6 +95,49 @@ EncodingAESKey: 点随机生成
 
 提交通过后，给公众号发送商品链接即可测试。
 
+## 国内链路备选：EdgeOne Pages Functions
+
+如果 `workers.dev` 能打开 `/debug`，但公众号就是不自动回复，常见原因是微信服务器到 `workers.dev` 的链路不稳定。项目已经加了 `functions/` 目录，可以直接作为 EdgeOne Pages Functions 项目部署。
+
+如果你控制台里看到的是 **EdgeOne Makers**，它可能使用 `edge-functions/` 目录。项目也已经同时加了 `edge-functions/`，两种目录都能复用同一套后端逻辑。
+
+部署思路：
+
+1. 把本项目推到 GitHub 仓库。
+2. 在 EdgeOne Pages 新建项目，选择这个 GitHub 仓库。
+3. 构建命令留空或使用：
+
+```bash
+npm run check
+```
+
+4. 输出目录可留空。
+5. 如果有函数目录选项：
+   - EdgeOne Pages 填 `functions`
+   - EdgeOne Makers 填 `edge-functions`
+6. 在 EdgeOne 环境变量里配置：
+
+```text
+WECHAT_TOKEN=123456
+TAOBAO_APP_KEY=
+TAOBAO_APP_SECRET=
+TAOBAO_ADZONE_ID=
+TAOBAO_PID=
+JD_APP_KEY=
+JD_APP_SECRET=
+JD_SITE_ID=
+JD_POSITION_ID=
+JD_PID=
+```
+
+7. 部署后拿到 EdgeOne 给的 HTTPS 域名，把公众号后台 URL 改成：
+
+```text
+https://你的-edgeone域名/wechat
+```
+
+Token、明文模式、XML 保持不变。
+
 ## 没有自动回复怎么排查
 
 1. 先确认 Worker 在线，把下面地址换成你的 Worker 域名：
@@ -130,7 +173,23 @@ https://你的-worker地址/debug?token=你在公众号后台填的Token
 }
 ```
 
-3. 看实时日志：
+3. 测试回复逻辑：
+
+```text
+https://你的-worker地址/wechat-test?token=你在公众号后台填的Token&msg=测试
+```
+
+正常会返回：
+
+```json
+{
+  "ok": true,
+  "input": "测试",
+  "reply": "请直接发送商品链接。\n支持：淘宝/天猫、京东。\n暂不支持：抖音。"
+}
+```
+
+4. 看实时日志：
 
 ```bash
 npx wrangler tail link-bot --format pretty
@@ -143,7 +202,7 @@ wechat_message_signature verified: true
 wechat_message msgType: text
 ```
 
-4. 如果日志里完全没有请求，说明公众号没有把消息推到 Worker。检查公众号后台：
+5. 如果日志里完全没有请求，说明公众号没有把消息推到 Worker。检查公众号后台：
 
 ```text
 URL 必须是：https://你的-worker地址/wechat
@@ -152,7 +211,7 @@ Token 必须和 WECHAT_TOKEN 完全一致
 配置必须已经启用
 ```
 
-5. 如果日志里 `verified: false`，说明 Token 不一致，重新设置：
+6. 如果日志里 `verified: false`，说明 Token 不一致，重新设置：
 
 ```bash
 npx wrangler secret put WECHAT_TOKEN
