@@ -70,6 +70,7 @@ npx wrangler secret put JD_APP_SECRET
 npx wrangler secret put JD_SITE_ID
 npx wrangler secret put JD_POSITION_ID
 npx wrangler secret put JD_PID
+npx wrangler secret put JD_SCENE_ID
 ```
 
 部署：
@@ -128,6 +129,7 @@ JD_APP_SECRET=
 JD_SITE_ID=
 JD_POSITION_ID=
 JD_PID=
+JD_SCENE_ID=
 ```
 
 7. 部署后拿到 EdgeOne 给的 HTTPS 域名，把公众号后台 URL 改成：
@@ -236,6 +238,14 @@ npm run deploy
 ```text
 京东转链成功
 链接：https://...
+```
+
+京东注意事项：
+
+```text
+从 2024-12-03 起，京东联盟普通开放接口不再默认支持直接传京东 SKU 或普通 item.jd.com 商品链接转链。
+如果账号没有 sceneId=2 权限，请发送京粉/联盟商品链接或完整联盟商品 ID。
+如果账号已开通 sceneId=2，在环境变量里配置 JD_SCENE_ID=2。
 ```
 
 抖音：

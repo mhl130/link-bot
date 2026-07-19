@@ -26,10 +26,9 @@ export async function convertJdLink(content, env) {
   const paramJson = {
     promotionCodeReq: {
       materialId,
-      siteId: Number(env.JD_SITE_ID),
+      siteId: env.JD_SITE_ID,
       positionId: env.JD_POSITION_ID ? Number(env.JD_POSITION_ID) : undefined,
-      pid: env.JD_PID || undefined,
-      chainType: 3
+      sceneId: env.JD_SCENE_ID ? Number(env.JD_SCENE_ID) : undefined
     }
   };
 
@@ -40,7 +39,7 @@ export async function convertJdLink(content, env) {
     format: "json",
     v: "1.0",
     sign_method: "md5",
-    param_json: JSON.stringify(paramJson)
+    "360buy_param_json": JSON.stringify(paramJson)
   };
   const params = {
     ...common,
@@ -54,8 +53,8 @@ export async function convertJdLink(content, env) {
     }
 
     const converted = pickJdResult(response.data);
-    if (!converted) {
-      return apiError("京东", JSON.stringify(response.data).slice(0, 400));
+    if (!converted.ok) {
+      return apiError("京东", converted.message || JSON.stringify(response.data).slice(0, 400));
     }
 
     return {
@@ -78,13 +77,31 @@ function jdSign(params, secret) {
 }
 
 function pickJdResult(data) {
-  const raw = data?.jd_union_open_promotion_common_get_response?.result;
+  const response = data?.jd_union_open_promotion_common_get_response ||
+    data?.jd_union_open_promotion_common_get_responce;
+  const raw = response?.result || response?.getResult;
   const result = typeof raw === "string" ? safeJson(raw) : raw;
   const payload = result?.data || result;
-  if (!payload) return null;
+  if (!result || result.code !== 200 || !payload) {
+    return {
+      ok: false,
+      code: result?.code,
+      message: result?.message || response?.msg || "京东接口未返回有效结果"
+    };
+  }
+
+  const shortUrl = payload.shortURL || payload.shortUrl || payload.clickURL || payload.clickUrl;
+  if (!shortUrl) {
+    return {
+      ok: false,
+      code: result.code,
+      message: result.message || "京东接口未返回推广链接"
+    };
+  }
 
   return {
-    shortUrl: payload.shortURL || payload.shortUrl || payload.clickURL || payload.clickUrl,
+    ok: true,
+    shortUrl,
     note: payload.message || "京东联盟返回成功"
   };
 }

@@ -82,6 +82,7 @@ function handleDebug(url, env) {
       JD_APP_SECRET: Boolean(env.JD_APP_SECRET),
       JD_SITE_ID: Boolean(env.JD_SITE_ID),
       JD_POSITION_ID: Boolean(env.JD_POSITION_ID),
+      JD_SCENE_ID: Boolean(env.JD_SCENE_ID),
       JD_PID: Boolean(env.JD_PID)
     }
   });

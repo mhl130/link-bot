@@ -18,3 +18,4 @@ JD_API_URL = "https://api.jd.com/routerjson"
 # JD_PID
 # JD_SITE_ID
 # JD_POSITION_ID
+# JD_SCENE_ID
