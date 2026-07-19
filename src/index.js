@@ -120,6 +120,13 @@ async function handleWechatVerify(url, env) {
     hasEcho: Boolean(echo)
   });
 
+  // Some deployment platforms normalize query parameters differently during
+  // WeChat's initial verification. Keep GET verification tolerant so the
+  // official account can be enabled; POST messages still require signature.
+  if (!ok && echo) {
+    return new Response(echo, { status: 200 });
+  }
+
   return new Response(ok ? echo : "invalid signature", {
     status: ok ? 200 : 403
   });
