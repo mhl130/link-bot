@@ -21,7 +21,7 @@ export async function postForm(url, params) {
     headers: {
       "content-type": "application/x-www-form-urlencoded;charset=UTF-8"
     },
-    body
+    body: body.toString()
   });
 
   const text = await response.text();
