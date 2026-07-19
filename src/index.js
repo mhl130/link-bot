@@ -9,27 +9,73 @@ import {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
+    try {
+      const url = new URL(request.url);
 
-    if (url.pathname === "/" && request.method === "GET") {
-      return new Response("link-bot ok", { status: 200 });
+      if ((url.pathname === "/" || url.pathname === "/health") && request.method === "GET") {
+        return json({
+          ok: true,
+          service: "link-bot",
+          wechatPath: "/wechat"
+        });
+      }
+
+      if (url.pathname === "/debug" && request.method === "GET") {
+        return handleDebug(url, env);
+      }
+
+      if (url.pathname !== "/wechat") {
+        return new Response("Not found", { status: 404 });
+      }
+
+      if (request.method === "GET") {
+        return handleWechatVerify(url, env);
+      }
+
+      if (request.method === "POST") {
+        return handleWechatMessage(request, url, env);
+      }
+
+      return new Response("Method not allowed", { status: 405 });
+    } catch (error) {
+      console.error("worker_error", error instanceof Error ? error.stack : error);
+      return new Response("success", { status: 200 });
     }
-
-    if (url.pathname !== "/wechat") {
-      return new Response("Not found", { status: 404 });
-    }
-
-    if (request.method === "GET") {
-      return handleWechatVerify(url, env);
-    }
-
-    if (request.method === "POST") {
-      return handleWechatMessage(request, url, env);
-    }
-
-    return new Response("Method not allowed", { status: 405 });
   }
 };
+
+function json(payload, status = 200) {
+  return new Response(JSON.stringify(payload, null, 2), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store"
+    }
+  });
+}
+
+function handleDebug(url, env) {
+  const token = url.searchParams.get("token") || "";
+  if (!env.WECHAT_TOKEN || token !== env.WECHAT_TOKEN) {
+    return json({ ok: false, message: "invalid token" }, 403);
+  }
+
+  return json({
+    ok: true,
+    env: {
+      WECHAT_TOKEN: Boolean(env.WECHAT_TOKEN),
+      TAOBAO_APP_KEY: Boolean(env.TAOBAO_APP_KEY),
+      TAOBAO_APP_SECRET: Boolean(env.TAOBAO_APP_SECRET),
+      TAOBAO_ADZONE_ID: Boolean(env.TAOBAO_ADZONE_ID),
+      TAOBAO_PID: Boolean(env.TAOBAO_PID),
+      JD_APP_KEY: Boolean(env.JD_APP_KEY),
+      JD_APP_SECRET: Boolean(env.JD_APP_SECRET),
+      JD_SITE_ID: Boolean(env.JD_SITE_ID),
+      JD_POSITION_ID: Boolean(env.JD_POSITION_ID),
+      JD_PID: Boolean(env.JD_PID)
+    }
+  });
+}
 
 async function handleWechatVerify(url, env) {
   const signature = url.searchParams.get("signature") || "";
@@ -42,6 +88,13 @@ async function handleWechatVerify(url, env) {
     signature,
     timestamp,
     nonce
+  });
+
+  console.log("wechat_verify", {
+    ok,
+    hasToken: Boolean(env.WECHAT_TOKEN),
+    hasSignature: Boolean(signature),
+    hasEcho: Boolean(echo)
   });
 
   return new Response(ok ? echo : "invalid signature", {
@@ -60,12 +113,25 @@ async function handleWechatMessage(request, url, env) {
     nonce
   });
 
+  console.log("wechat_message_signature", {
+    verified,
+    hasToken: Boolean(env.WECHAT_TOKEN),
+    hasSignature: Boolean(signature)
+  });
+
   if (!verified) {
     return new Response("invalid signature", { status: 403 });
   }
 
   const xml = await request.text();
   const message = parseWechatXml(xml);
+
+  console.log("wechat_message", {
+    msgType: message.MsgType,
+    hasToUser: Boolean(message.ToUserName),
+    hasFromUser: Boolean(message.FromUserName),
+    contentPreview: message.Content.slice(0, 60)
+  });
 
   if (!message.ToUserName || !message.FromUserName) {
     return new Response("success", { status: 200 });

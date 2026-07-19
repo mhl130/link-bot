@@ -95,6 +95,72 @@ EncodingAESKey: 点随机生成
 
 提交通过后，给公众号发送商品链接即可测试。
 
+## 没有自动回复怎么排查
+
+1. 先确认 Worker 在线，把下面地址换成你的 Worker 域名：
+
+```text
+https://你的-worker地址/health
+```
+
+正常会返回：
+
+```json
+{
+  "ok": true,
+  "service": "link-bot",
+  "wechatPath": "/wechat"
+}
+```
+
+2. 确认 `WECHAT_TOKEN` 已经设置成功：
+
+```text
+https://你的-worker地址/debug?token=你在公众号后台填的Token
+```
+
+正常会看到：
+
+```json
+{
+  "ok": true,
+  "env": {
+    "WECHAT_TOKEN": true
+  }
+}
+```
+
+3. 看实时日志：
+
+```bash
+npx wrangler tail link-bot --format pretty
+```
+
+然后给公众号发一条文字消息。正常应该看到：
+
+```text
+wechat_message_signature verified: true
+wechat_message msgType: text
+```
+
+4. 如果日志里完全没有请求，说明公众号没有把消息推到 Worker。检查公众号后台：
+
+```text
+URL 必须是：https://你的-worker地址/wechat
+Token 必须和 WECHAT_TOKEN 完全一致
+消息加解密方式必须是：明文模式
+配置必须已经启用
+```
+
+5. 如果日志里 `verified: false`，说明 Token 不一致，重新设置：
+
+```bash
+npx wrangler secret put WECHAT_TOKEN
+npm run deploy
+```
+
+然后公众号后台也填同一个 Token。
+
 ## 回复示例
 
 淘宝/天猫：
