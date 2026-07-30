@@ -17,6 +17,10 @@ export function detectPlatform(text) {
     return "jd";
   }
 
+  if (/(vip\.com|vipshop\.com|t\.vip\.com|mst\.vip\.com|唯品会)/i.test(normalized)) {
+    return "vip";
+  }
+
   if (/(douyin\.com|iesdouyin\.com|snssdk\.com|抖音)/i.test(normalized)) {
     return "douyin";
   }

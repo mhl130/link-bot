@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { detectPlatform, extractFirstUrl } from "../src/platform.js";
-import { md5 } from "../src/hash.js";
+import { hmacMd5, md5 } from "../src/hash.js";
 import {
   parseWechatXml,
   replyTextXml,
@@ -9,10 +9,15 @@ import {
 
 assert.equal(md5(""), "d41d8cd98f00b204e9800998ecf8427e");
 assert.equal(md5("abc"), "900150983cd24fb0d6963f7d28e17f72");
+assert.equal(
+  hmacMd5("key", "The quick brown fox jumps over the lazy dog"),
+  "80070713463e7749b90c2dc24911e275"
+);
 
 assert.equal(detectPlatform("https://item.taobao.com/item.htm?id=1"), "taobao");
 assert.equal(detectPlatform("￥abc123￥"), "taobao");
 assert.equal(detectPlatform("https://item.jd.com/100.html"), "jd");
+assert.equal(detectPlatform("https://m.vip.com/product-1.html"), "vip");
 assert.equal(detectPlatform("https://v.douyin.com/abc/"), "douyin");
 assert.equal(detectPlatform("hello"), "unknown");
 

@@ -7,6 +7,7 @@
 - 支持微信公众号明文模式消息推送。
 - 支持淘宝/天猫链接识别，预留淘宝联盟转链调用。
 - 支持京东链接识别，预留京东联盟转链调用。
+- 支持唯品会链接识别，预留唯品会联盟转链调用。
 - 抖音链接会识别，但当前没有抖音联盟接口权限时只回复暂不支持。
 - 不使用数据库，适合个人免费部署。
 
@@ -23,7 +24,7 @@ cd /Users/mac1/codex/淘宝客/link-bot
 - 京东联盟：`appKey`、`appSecret`、`siteId`，可选 `positionId`、`PID`。
 - Cloudflare 账号。
 
-> 你现在可以先不填淘宝/京东密钥。没填时，公众号会回复“已识别但环境变量未配置”，不会崩溃。
+> 你现在可以先不填淘宝/京东/唯品会密钥。没填时，公众号会回复“已识别但环境变量未配置”，不会崩溃。
 
 ## 本地安装
 
@@ -71,6 +72,16 @@ npx wrangler secret put JD_SITE_ID
 npx wrangler secret put JD_POSITION_ID
 npx wrangler secret put JD_PID
 npx wrangler secret put JD_SCENE_ID
+```
+
+唯品会：
+
+```bash
+npx wrangler secret put VIP_APP_KEY
+npx wrangler secret put VIP_APP_SECRET
+npx wrangler secret put VIP_CHAN_TAG
+npx wrangler secret put VIP_ACCESS_TOKEN
+npx wrangler secret put VIP_STAT_PARAM
 ```
 
 部署：
@@ -130,6 +141,12 @@ JD_SITE_ID=
 JD_POSITION_ID=
 JD_PID=
 JD_SCENE_ID=
+VIP_APP_KEY=
+VIP_APP_SECRET=
+VIP_CHAN_TAG=
+VIP_ACCESS_TOKEN=
+VIP_STAT_PARAM=
+VIP_PLATFORM=
 ```
 
 7. 部署后拿到 EdgeOne 给的 HTTPS 域名，把公众号后台 URL 改成：
@@ -187,7 +204,7 @@ https://你的-worker地址/wechat-test?token=你在公众号后台填的Token&m
 {
   "ok": true,
   "input": "测试",
-  "reply": "请直接发送商品链接。\n支持：淘宝/天猫、京东。\n暂不支持：抖音。"
+  "reply": "请直接发送商品链接。\n支持：淘宝/天猫、京东、唯品会。\n暂不支持：抖音。"
 }
 ```
 
@@ -246,6 +263,14 @@ npm run deploy
 从 2024-12-03 起，京东联盟普通开放接口不再默认支持直接传京东 SKU 或普通 item.jd.com 商品链接转链。
 如果账号没有 sceneId=2 权限，请发送京粉/联盟商品链接或完整联盟商品 ID。
 如果账号已开通 sceneId=2，在环境变量里配置 JD_SCENE_ID=2。
+```
+
+唯品会：
+
+```text
+唯品会转链成功
+链接：https://...
+说明：唯品会联盟返回成功
 ```
 
 抖音：

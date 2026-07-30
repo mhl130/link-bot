@@ -1,5 +1,30 @@
 export function md5(input) {
-  const bytes = toUtf8Bytes(input);
+  return md5Bytes(toUtf8Bytes(input));
+}
+
+export function hmacMd5(key, message) {
+  let keyBytes = toUtf8Bytes(key);
+  if (keyBytes.length > 64) {
+    keyBytes = hexToBytes(md5Bytes(keyBytes));
+  }
+
+  const paddedKey = new Uint8Array(64);
+  paddedKey.set(keyBytes);
+
+  const ipad = new Uint8Array(64);
+  const opad = new Uint8Array(64);
+  for (let i = 0; i < 64; i += 1) {
+    ipad[i] = paddedKey[i] ^ 0x36;
+    opad[i] = paddedKey[i] ^ 0x5c;
+  }
+
+  const messageBytes = toUtf8Bytes(message);
+  const inner = concatBytes(ipad, messageBytes);
+  const innerHash = hexToBytes(md5Bytes(inner));
+  return md5Bytes(concatBytes(opad, innerHash));
+}
+
+function md5Bytes(bytes) {
   const bitLength = bytes.length * 8;
   const paddedLength = (((bytes.length + 8) >> 6) + 1) * 64;
   const buffer = new Uint8Array(paddedLength);
@@ -62,6 +87,21 @@ export function md5(input) {
 
 function toUtf8Bytes(input) {
   return new TextEncoder().encode(input);
+}
+
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i += 1) {
+    bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+  return bytes;
+}
+
+function concatBytes(left, right) {
+  const output = new Uint8Array(left.length + right.length);
+  output.set(left);
+  output.set(right, left.length);
+  return output;
 }
 
 function rotateLeft(value, shift) {
