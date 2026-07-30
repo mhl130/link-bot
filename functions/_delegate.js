@@ -1,5 +1,5 @@
-import worker from "../src/index.js";
+import app from "../src/index.js";
 
 export function onRequest(context) {
-  return worker.fetch(context.request, context.env);
+  return app.fetch(context.request, context.env);
 }

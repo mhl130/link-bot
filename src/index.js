@@ -44,7 +44,7 @@ export default {
 
       return new Response("Method not allowed", { status: 405 });
     } catch (error) {
-      console.error("worker_error", error instanceof Error ? error.stack : error);
+      console.error("service_error", error instanceof Error ? error.stack : error);
       return new Response("success", { status: 200 });
     }
   }

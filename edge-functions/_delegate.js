@@ -1,7 +1,7 @@
-import worker from "../src/index.js";
+import app from "../src/index.js";
 
 export default function onRequest(context) {
-  return worker.fetch(context.request, context.env || {});
+  return app.fetch(context.request, context.env || {});
 }
 
 export function onRequestGet(context) {
