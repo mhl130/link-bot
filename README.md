@@ -1,6 +1,6 @@
 # 公众号淘宝/京东转链机器人
 
-个人订阅号自动回复项目。用户给公众号发送淘宝、天猫或京东商品链接，EdgeOne Pages Functions 接收微信消息推送，调用联盟转链接口后返回推广链接。
+个人订阅号自动回复项目。用户给公众号发送淘宝、天猫、京东、唯品会或拼多多商品链接，EdgeOne Pages Functions 接收微信消息推送，调用联盟转链接口后返回推广链接。
 
 第一版功能：
 
@@ -8,6 +8,7 @@
 - 支持淘宝/天猫链接识别，预留淘宝联盟转链调用。
 - 支持京东链接识别，预留京东联盟转链调用。
 - 支持唯品会链接识别，预留唯品会联盟转链调用。
+- 支持拼多多链接识别，预留多多进宝转链调用。
 - 抖音链接会识别，但当前没有抖音联盟接口权限时只回复暂不支持。
 - 不使用数据库，适合个人免费部署。
 
@@ -22,6 +23,7 @@ cd /Users/mac1/codex/淘宝客/link-bot
 - 微信公众号：能打开“配置消息推送”，可填写 URL、Token、EncodingAESKey。
 - 淘宝联盟：`AppKey`、`AppSecret`、`adzone_id`，可选 `PID`。
 - 京东联盟：`appKey`、`appSecret`、`siteId`，可选 `positionId`、`PID`。
+- 多多进宝：`client_id`、`client_secret`、推广位 `PID`。
 - EdgeOne Pages 项目。
 
 > 你现在可以先不填淘宝/京东/唯品会密钥。没填时，公众号会回复“已识别但环境变量未配置”，不会崩溃。
@@ -78,6 +80,10 @@ VIP_CHAN_TAG=
 VIP_ACCESS_TOKEN=
 VIP_STAT_PARAM=
 VIP_PLATFORM=
+PDD_CLIENT_ID=
+PDD_CLIENT_SECRET=
+PDD_PID=
+PDD_CUSTOM_PARAMETERS=
 ```
 
 7. 部署后拿到 EdgeOne 给的 HTTPS 域名，把公众号后台 URL 改成：
@@ -135,7 +141,7 @@ https://你的-edgeone域名/wechat-test?token=你在公众号后台填的Token&
 {
   "ok": true,
   "input": "测试",
-  "reply": "请直接发送商品链接。\n支持：淘宝/天猫、京东、唯品会。\n暂不支持：抖音。"
+  "reply": "请直接发送商品链接。\n支持：淘宝/天猫、京东、唯品会、拼多多。\n暂不支持：抖音。"
 }
 ```
 
@@ -189,6 +195,15 @@ Token 必须和 WECHAT_TOKEN 完全一致
 唯品会转链成功
 链接：https://...
 说明：唯品会联盟返回成功
+```
+
+拼多多：
+
+```text
+拼多多转链成功
+链接：https://...
+优惠券：https://...
+说明：拼多多返回成功
 ```
 
 抖音：

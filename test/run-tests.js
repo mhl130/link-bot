@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import { detectPlatform, extractFirstUrl } from "../src/platform.js";
 import { hmacMd5, md5 } from "../src/hash.js";
 import {
+  extractPddGoodsId,
+  pddSign,
+  pickPddResult
+} from "../src/pdd.js";
+import {
   parseWechatXml,
   replyTextXml,
   verifyWechatSignature
@@ -18,12 +23,46 @@ assert.equal(detectPlatform("https://item.taobao.com/item.htm?id=1"), "taobao");
 assert.equal(detectPlatform("￥abc123￥"), "taobao");
 assert.equal(detectPlatform("https://item.jd.com/100.html"), "jd");
 assert.equal(detectPlatform("https://m.vip.com/product-1.html"), "vip");
+assert.equal(detectPlatform("https://mobile.yangkeduo.com/goods.html?goods_id=123"), "pdd");
 assert.equal(detectPlatform("https://v.douyin.com/abc/"), "douyin");
 assert.equal(detectPlatform("hello"), "unknown");
 
 assert.equal(
   extractFirstUrl("帮我转 https://item.jd.com/100.html，谢谢"),
   "https://item.jd.com/100.html"
+);
+assert.equal(
+  extractPddGoodsId("帮我转 https://mobile.yangkeduo.com/goods.html?goods_id=123456&foo=bar"),
+  "123456"
+);
+assert.equal(extractPddGoodsId("https://example.com/no-goods-id"), "");
+assert.equal(
+  pddSign({
+    client_id: "client",
+    data_type: "JSON",
+    timestamp: 1,
+    type: "test"
+  }, "secret"),
+  "60530745E7422F73524A3D9C31FB2725"
+);
+assert.deepEqual(
+  pickPddResult({
+    goods_promotion_url_generate_response: {
+      goods_promotion_url_list: [
+        {
+          short_url: "https://p.pinduoduo.com/demo",
+          mobile_short_url: "https://mobile.yangkeduo.com/demo",
+          we_app_info: { page_path: "pages/goods.html" }
+        }
+      ]
+    }
+  }),
+  {
+    ok: true,
+    shortUrl: "https://mobile.yangkeduo.com/demo",
+    couponUrl: "https://p.pinduoduo.com/demo",
+    note: "拼多多返回成功"
+  }
 );
 
 const sampleXml = [

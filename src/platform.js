@@ -21,6 +21,10 @@ export function detectPlatform(text) {
     return "vip";
   }
 
+  if (/(pinduoduo\.com|yangkeduo\.com|pdd\.com|拼多多)/i.test(normalized)) {
+    return "pdd";
+  }
+
   if (/(douyin\.com|iesdouyin\.com|snssdk\.com|抖音)/i.test(normalized)) {
     return "douyin";
   }

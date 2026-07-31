@@ -2,6 +2,7 @@ import { detectPlatform, extractFirstUrl } from "./platform.js";
 import { convertJdLink } from "./jd.js";
 import { convertTaobaoLink } from "./taobao.js";
 import { convertVipLink } from "./vip.js";
+import { convertPddLink } from "./pdd.js";
 import {
   parseWechatXml,
   replyTextXml,
@@ -89,7 +90,10 @@ function handleDebug(url, env) {
       VIP_APP_SECRET: Boolean(env.VIP_APP_SECRET),
       VIP_CHAN_TAG: Boolean(env.VIP_CHAN_TAG),
       VIP_ACCESS_TOKEN: Boolean(env.VIP_ACCESS_TOKEN),
-      VIP_STAT_PARAM: Boolean(env.VIP_STAT_PARAM)
+      VIP_STAT_PARAM: Boolean(env.VIP_STAT_PARAM),
+      PDD_CLIENT_ID: Boolean(env.PDD_CLIENT_ID),
+      PDD_CLIENT_SECRET: Boolean(env.PDD_CLIENT_SECRET),
+      PDD_PID: Boolean(env.PDD_PID)
     }
   });
 }
@@ -200,7 +204,7 @@ async function handleWechatMessage(request, url, env) {
 
 async function buildReply(message, env) {
   if (message.MsgType !== "text") {
-    return "请发送淘宝、天猫、京东或唯品会商品链接。抖音转链暂未开通。";
+    return "请发送淘宝、天猫、京东、唯品会或拼多多商品链接。抖音转链暂未开通。";
   }
 
   const content = message.Content.trim();
@@ -225,14 +229,19 @@ async function buildReply(message, env) {
     return formatResult(result);
   }
 
+  if (platform === "pdd") {
+    const result = await convertPddLink(content, env);
+    return formatResult(result);
+  }
+
   const url = extractFirstUrl(content);
   if (url) {
-    return "暂时只支持淘宝、天猫、京东、唯品会商品链接。抖音接口未开通。";
+    return "暂时只支持淘宝、天猫、京东、唯品会、拼多多商品链接。抖音接口未开通。";
   }
 
   return [
     "请直接发送商品链接。",
-    "支持：淘宝/天猫、京东、唯品会。",
+    "支持：淘宝/天猫、京东、唯品会、拼多多。",
     "暂不支持：抖音。"
   ].join("\n");
 }
