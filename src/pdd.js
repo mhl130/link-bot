@@ -24,8 +24,8 @@ export async function convertPddLink(content, env) {
     };
   }
 
-  const goodsId = await resolvePddGoodsId(content);
-  if (!goodsId) {
+  const goods = await resolvePddGoods(content, env);
+  if (!goods.goodsId && !goods.goodsSign) {
     return {
       ok: false,
       platform: "拼多多",
@@ -36,6 +36,9 @@ export async function convertPddLink(content, env) {
       ].join("\n")
     };
   }
+  if (!goods.goodsSign) {
+    return apiError(goods.message || "未能获取商品 goods_sign，请检查多多进宝 PID 是否已授权备案。");
+  }
 
   const common = {
     type: env.PDD_METHOD || PDD_METHOD,
@@ -43,7 +46,7 @@ export async function convertPddLink(content, env) {
     timestamp: Math.floor(Date.now() / 1000),
     data_type: "JSON",
     p_id: env.PDD_PID,
-    goods_id_list: `[${goodsId}]`,
+    goods_sign_list: JSON.stringify([goods.goodsSign]),
     generate_short_url: true,
     custom_parameters: env.PDD_CUSTOM_PARAMETERS || undefined
   };
@@ -91,6 +94,22 @@ export function extractPddGoodsId(content) {
   }
 }
 
+export function extractPddGoodsSign(content) {
+  const url = extractFirstUrl(content);
+  const source = url || content;
+  const direct = /(?:goods_sign|goodsSign)=([^&#\s]+)/i.exec(source);
+  if (direct) return decodeURIComponent(direct[1]);
+
+  try {
+    const parsed = new URL(source);
+    return parsed.searchParams.get("goods_sign") ||
+      parsed.searchParams.get("goodsSign") ||
+      "";
+  } catch {
+    return "";
+  }
+}
+
 export async function resolvePddGoodsId(content, fetcher = fetch) {
   const direct = extractPddGoodsId(content);
   if (direct) return direct;
@@ -109,6 +128,55 @@ export async function resolvePddGoodsId(content, fetcher = fetch) {
   }
 }
 
+async function resolvePddGoods(content, env) {
+  const directGoodsSign = extractPddGoodsSign(content);
+  if (directGoodsSign) {
+    return {
+      goodsId: extractPddGoodsId(content),
+      goodsSign: directGoodsSign
+    };
+  }
+
+  const goodsId = await resolvePddGoodsId(content);
+  if (!goodsId) {
+    return { goodsId: "", goodsSign: "" };
+  }
+
+  const signResult = await fetchPddGoodsSign(content, goodsId, env);
+  return {
+    goodsId,
+    goodsSign: signResult.goodsSign,
+    message: signResult.message
+  };
+}
+
+async function fetchPddGoodsSign(content, goodsId, env) {
+  const common = {
+    type: "pdd.ddk.goods.search",
+    client_id: env.PDD_CLIENT_ID,
+    timestamp: Math.floor(Date.now() / 1000),
+    data_type: "JSON",
+    keyword: pddGoodsSearchKeyword(content, goodsId),
+    page: 1,
+    page_size: 10,
+    pid: env.PDD_PID,
+    custom_parameters: env.PDD_CUSTOM_PARAMETERS || undefined
+  };
+  const params = {
+    ...common,
+    sign: pddSign(common, env.PDD_CLIENT_SECRET)
+  };
+  const response = await postForm(env.PDD_API_URL || "https://gw-api.pinduoduo.com/api/router", params);
+  return {
+    goodsSign: pickPddGoodsSign(response.data, goodsId),
+    message: pickPddErrorMessage(response.data)
+  };
+}
+
+export function pddGoodsSearchKeyword(content, goodsId) {
+  return extractFirstUrl(content) || goodsId;
+}
+
 export function pddSign(params, secret) {
   const content = Object.keys(params)
     .filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== "")
@@ -123,11 +191,11 @@ export function pickPddResult(data) {
     return { ok: false, message: "拼多多接口未返回 JSON" };
   }
 
-  const error = data.error_response || data.errorResponse;
-  if (error) {
+  const errorMessage = pickPddErrorMessage(data);
+  if (errorMessage) {
     return {
       ok: false,
-      message: error.error_msg || error.sub_msg || error.msg || JSON.stringify(error)
+      message: errorMessage
     };
   }
 
@@ -167,6 +235,29 @@ export function pickPddResult(data) {
     couponUrl: first.short_url || first.shortUrl || first.url || "",
     note: "拼多多返回成功"
   };
+}
+
+export function pickPddGoodsSign(data, goodsId) {
+  if (!data) return "";
+
+  const response = data.goods_search_response ||
+    data.goodsSearchResponse ||
+    data.goods_basic_detail_response ||
+    data.goodsBasicDetailResponse;
+  const list = response?.goods_list ||
+    response?.goodsList ||
+    response?.list;
+  if (!Array.isArray(list)) return "";
+
+  const matched = list.find((item) => String(item.goods_id || item.goodsId || "") === String(goodsId)) ||
+    list[0];
+  return matched?.goods_sign || matched?.goodsSign || "";
+}
+
+function pickPddErrorMessage(data) {
+  const error = data?.error_response || data?.errorResponse;
+  if (!error) return "";
+  return error.sub_msg || error.error_msg || error.msg || JSON.stringify(error);
 }
 
 function apiError(detail) {

@@ -3,6 +3,9 @@ import { detectPlatform, extractFirstUrl } from "../src/platform.js";
 import { hmacMd5, md5 } from "../src/hash.js";
 import {
   extractPddGoodsId,
+  extractPddGoodsSign,
+  pddGoodsSearchKeyword,
+  pickPddGoodsSign,
   resolvePddGoodsId,
   pddSign,
   pickPddResult
@@ -44,6 +47,26 @@ assert.equal(
   "978556558455"
 );
 assert.equal(
+  extractPddGoodsSign("https://mobile.yangkeduo.com/goods.html?goods_sign=abcDEF123"),
+  "abcDEF123"
+);
+assert.equal(
+  pickPddGoodsSign({
+    goods_search_response: {
+      goods_list: [
+        { goods_id: 1, goods_sign: "wrong" },
+        { goods_id: 978556558455, goods_sign: "GS_978" }
+      ]
+    }
+  }, "978556558455"),
+  "GS_978"
+);
+assert.equal(
+  pddGoodsSearchKeyword("https://mobile.yangkeduo.com/goods2.html?ps=abc", "978556558455"),
+  "https://mobile.yangkeduo.com/goods2.html?ps=abc"
+);
+assert.equal(pddGoodsSearchKeyword("拼多多商品", "978556558455"), "978556558455");
+assert.equal(
   pddSign({
     client_id: "client",
     data_type: "JSON",
@@ -51,6 +74,19 @@ assert.equal(
     type: "test"
   }, "secret"),
   "60530745E7422F73524A3D9C31FB2725"
+);
+assert.deepEqual(
+  pickPddResult({
+    error_response: {
+      error_msg: "业务服务错误",
+      sub_msg: "goods_id_list已下线，请使用goods_sign_list代替",
+      sub_code: "40005"
+    }
+  }),
+  {
+    ok: false,
+    message: "goods_id_list已下线，请使用goods_sign_list代替"
+  }
 );
 assert.deepEqual(
   pickPddResult({
