@@ -3,6 +3,7 @@ import { detectPlatform, extractFirstUrl } from "../src/platform.js";
 import { hmacMd5, md5 } from "../src/hash.js";
 import {
   extractPddGoodsId,
+  resolvePddGoodsId,
   pddSign,
   pickPddResult
 } from "../src/pdd.js";
@@ -36,6 +37,12 @@ assert.equal(
   "123456"
 );
 assert.equal(extractPddGoodsId("https://example.com/no-goods-id"), "");
+assert.equal(
+  await resolvePddGoodsId("https://mobile.yangkeduo.com/goods2.html?ps=abc", async () => ({
+    url: "https://mobile.yangkeduo.com/goods.html?goods_id=978556558455"
+  })),
+  "978556558455"
+);
 assert.equal(
   pddSign({
     client_id: "client",

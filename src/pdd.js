@@ -24,7 +24,7 @@ export async function convertPddLink(content, env) {
     };
   }
 
-  const goodsId = extractPddGoodsId(content);
+  const goodsId = await resolvePddGoodsId(content);
   if (!goodsId) {
     return {
       ok: false,
@@ -86,6 +86,24 @@ export function extractPddGoodsId(content) {
     return parsed.searchParams.get("goods_id") ||
       parsed.searchParams.get("goodsId") ||
       "";
+  } catch {
+    return "";
+  }
+}
+
+export async function resolvePddGoodsId(content, fetcher = fetch) {
+  const direct = extractPddGoodsId(content);
+  if (direct) return direct;
+
+  const url = extractFirstUrl(content);
+  if (!url || typeof fetcher !== "function") return "";
+
+  try {
+    const response = await fetcher(url, {
+      method: "GET",
+      redirect: "follow"
+    });
+    return extractPddGoodsId(response?.url || "");
   } catch {
     return "";
   }
